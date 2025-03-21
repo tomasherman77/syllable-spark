@@ -44,11 +44,6 @@ const ProcessingStatus = ({
           status === 'error' ? "bg-destructive/30" : "",
           status === 'complete' ? "bg-green-100" : ""
         )}
-        indicatorClassName={cn(
-          "transition-all duration-300",
-          status === 'error' ? "bg-destructive" : "",
-          status === 'complete' ? "bg-green-500" : ""
-        )}
       />
       <p className="text-xs text-muted-foreground mt-1">
         {status === 'processing' && 'Detecting syllables and applying formatting...'}

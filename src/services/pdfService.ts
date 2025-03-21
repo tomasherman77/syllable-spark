@@ -51,21 +51,84 @@ export const processPdf = async (
   // Simulate processing with progress
   await simulateProgress(onProgress, 4000, 20);
   
-  // In a real implementation, this would return URLs from the backend
-  // For now, we'll just return mock URLs
-  return {
-    downloadUrl: `#download-${fileId}-${boldingOption}`,
-    previewUrl: boldingOption === 'syllable' 
-      ? `#preview-syllable-${fileId}` 
-      : `#preview-letters-${fileId}`
-  };
+  // Generate a dummy PDF content for demo purposes
+  const dummyPdfBlob = generateDummyPdf();
+  
+  // Create object URLs for the blob
+  const downloadUrl = URL.createObjectURL(dummyPdfBlob);
+  const previewUrl = downloadUrl;
+  
+  return { downloadUrl, previewUrl };
 };
 
-// Mock function for actual PDF download (would connect to backend in real implementation)
+// Function to generate a dummy PDF blob for demo purposes
+const generateDummyPdf = (): Blob => {
+  // This is a very minimal PDF file structure
+  const pdfContent = `
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources 4 0 R /MediaBox [0 0 612 792] /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Font << /F1 6 0 R >> >>
+endobj
+5 0 obj
+<< /Length 90 >>
+stream
+BT
+/F1 24 Tf
+100 700 Td
+(Sample PDF with bolded syllables) Tj
+/F1 14 Tf
+0 -40 Td
+(This is a mock PDF file. In a real implementation, this would be your processed PDF with the first syllable of each word in bold.) Tj
+ET
+endstream
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 7
+0000000000 65535 f
+0000000010 00000 n
+0000000059 00000 n
+0000000118 00000 n
+0000000217 00000 n
+0000000258 00000 n
+0000000399 00000 n
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+466
+%%EOF
+  `;
+
+  return new Blob([pdfContent], { type: 'application/pdf' });
+};
+
+// Function for actual PDF download
 export const downloadProcessedPdf = (downloadUrl: string, fileName: string): void => {
-  // In a real app, this would trigger an actual download
-  console.log(`Downloading processed PDF: ${fileName} from ${downloadUrl}`);
+  // Create an anchor element
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = `Processed_${fileName}`;
   
-  // For demo purposes, we'll show an alert
-  alert(`In a real implementation, this would download your processed PDF: ${fileName}`);
+  // Append to the document
+  document.body.appendChild(link);
+  
+  // Trigger the download
+  link.click();
+  
+  // Cleanup
+  document.body.removeChild(link);
+  
+  // Optional: revoke the object URL to free up memory
+  setTimeout(() => URL.revokeObjectURL(downloadUrl), 100);
 };

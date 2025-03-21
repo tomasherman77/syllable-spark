@@ -3,6 +3,7 @@ import React from 'react';
 import { Download, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { downloadProcessedPdf } from '@/services/pdfService';
 
 interface ProcessedResultProps {
   fileName: string;
@@ -17,6 +18,10 @@ const ProcessedResult = ({
   previewUrl,
   className
 }: ProcessedResultProps) => {
+  const handleDownload = () => {
+    downloadProcessedPdf(downloadUrl, fileName);
+  };
+
   return (
     <div className={cn("w-full p-5 rounded-lg border space-y-4 bg-card animate-scale-in", className)}>
       <div>
@@ -29,7 +34,7 @@ const ProcessedResult = ({
       <div className="grid gap-3 sm:grid-cols-2">
         <Button 
           variant="default" 
-          onClick={() => window.open(downloadUrl, '_blank')}
+          onClick={handleDownload}
           className="flex items-center gap-2 w-full"
         >
           <Download className="w-4 h-4" />
