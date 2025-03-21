@@ -42,7 +42,7 @@ export const uploadPdfFile = async (
   return `file_${Date.now()}`;
 };
 
-// Mock function to simulate PDF processing
+// Process PDF function - in a real app, this would call a backend API
 export const processPdf = async (
   fileId: string,
   boldingOption: BoldingOption,
@@ -51,19 +51,25 @@ export const processPdf = async (
   // Simulate processing with progress
   await simulateProgress(onProgress, 4000, 20);
   
-  // Generate a dummy PDF content for demo purposes
-  const dummyPdfBlob = generateDummyPdf();
+  // Generate a PDF with bolded first syllables or first 3 letters
+  const pdfBlob = await generateProcessedPdf(boldingOption);
   
   // Create object URLs for the blob
-  const downloadUrl = URL.createObjectURL(dummyPdfBlob);
+  const downloadUrl = URL.createObjectURL(pdfBlob);
   const previewUrl = downloadUrl;
   
   return { downloadUrl, previewUrl };
 };
 
-// Function to generate a dummy PDF blob for demo purposes
-const generateDummyPdf = (): Blob => {
-  // This is a very minimal PDF file structure
+// Generate a PDF with the first syllable or first 3 letters of each word bolded
+const generateProcessedPdf = async (boldingOption: BoldingOption): Promise<Blob> => {
+  // This is where the real implementation would process the PDF content
+  // For now, we'll generate a sample PDF with some text that demonstrates the bolding
+  
+  const sampleText = "This is a demonstration of the PDF processing feature.";
+  const processedContent = boldWords(sampleText, boldingOption);
+  
+  // Create a PDF with the processed content
   const pdfContent = `
 %PDF-1.4
 1 0 obj
@@ -76,41 +82,89 @@ endobj
 << /Type /Page /Parent 2 0 R /Resources 4 0 R /MediaBox [0 0 612 792] /Contents 5 0 R >>
 endobj
 4 0 obj
-<< /Font << /F1 6 0 R >> >>
+<< /Font << /F1 6 0 R /F2 7 0 R >> >>
 endobj
 5 0 obj
-<< /Length 90 >>
+<< /Length 350 >>
 stream
 BT
 /F1 24 Tf
 100 700 Td
-(Sample PDF with bolded syllables) Tj
+(PDF with ${boldingOption === 'syllable' ? 'First Syllable' : 'First 3 Letters'} Bolded) Tj
 /F1 14 Tf
-0 -40 Td
-(This is a mock PDF file. In a real implementation, this would be your processed PDF with the first syllable of each word in bold.) Tj
+100 650 Td
+(Original text: ${sampleText}) Tj
+/F1 14 Tf
+100 620 Td
+(${processedContent}) Tj
+/F1 12 Tf
+100 550 Td
+(Note: This is a simulated result. In a full implementation, this would be your actual document with the first ${boldingOption === 'syllable' ? 'syllable' : '3 letters'} of each word bolded.) Tj
 ET
 endstream
 endobj
 6 0 obj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
 endobj
+7 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
 xref
-0 7
+0 8
 0000000000 65535 f
 0000000010 00000 n
 0000000059 00000 n
 0000000118 00000 n
 0000000217 00000 n
-0000000258 00000 n
-0000000399 00000 n
+0000000268 00000 n
+0000000670 00000 n
+0000000737 00000 n
 trailer
-<< /Size 7 /Root 1 0 R >>
+<< /Size 8 /Root 1 0 R >>
 startxref
-466
+807
 %%EOF
   `;
 
   return new Blob([pdfContent], { type: 'application/pdf' });
+};
+
+// Function to bold parts of words based on the selected option
+const boldWords = (text: string, boldingOption: BoldingOption): string => {
+  // Split the text into words
+  const words = text.split(' ');
+  
+  // Process each word
+  const processedWords = words.map(word => {
+    if (word.length <= 1) return word;
+    
+    let boldPart = '';
+    let restPart = '';
+    
+    if (boldingOption === 'syllable') {
+      // Simple syllable detection (in a real implementation, this would be more sophisticated)
+      // For demo, we'll just bold the first vowel group
+      const syllableMatch = word.match(/^[^aeiou]*[aeiou]+/i);
+      if (syllableMatch) {
+        boldPart = syllableMatch[0];
+        restPart = word.substring(boldPart.length);
+      } else {
+        // Fallback if no vowel found
+        boldPart = word.substring(0, 1);
+        restPart = word.substring(1);
+      }
+    } else {
+      // Bold first 3 letters (or the whole word if shorter)
+      boldPart = word.substring(0, Math.min(3, word.length));
+      restPart = word.substring(Math.min(3, word.length));
+    }
+    
+    // For PDF content, we would return special formatting
+    // In a real implementation with a PDF library, we would use proper text styling
+    return `/F2 14 Tf(${boldPart}) Tj /F1 14 Tf(${restPart}) Tj`;
+  });
+  
+  return processedWords.join(' ');
 };
 
 // Function for actual PDF download
