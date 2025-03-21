@@ -63,13 +63,22 @@ export const processPdf = async (
 
 // Generate a PDF with the first syllable or first 3 letters of each word bolded
 const generateProcessedPdf = async (boldingOption: BoldingOption): Promise<Blob> => {
-  // This is where the real implementation would process the PDF content
-  // For now, we'll generate a sample PDF with some text that demonstrates the bolding
+  // In a real implementation, we would use a PDF library like pdf-lib or pdfjs
+  // For this simulation, we'll create a more realistic sample PDF
   
-  const sampleText = "This is a demonstration of the PDF processing feature.";
-  const processedContent = boldWords(sampleText, boldingOption);
+  const paragraphs = [
+    "This is a demonstration of the PDF processing feature with multiple paragraphs.",
+    "In a real implementation, we would process your actual uploaded document using a PDF library.",
+    "The application would analyze each word to determine syllables or count letters based on your selection.",
+    "Education research suggests that highlighting parts of words can improve reading comprehension and retention."
+  ];
   
-  // Create a PDF with the processed content
+  // Process each paragraph
+  const processedParagraphs = paragraphs.map(paragraph => 
+    processTextWithBolding(paragraph, boldingOption)
+  );
+  
+  // Create a more structured PDF showing our processed text
   const pdfContent = `
 %PDF-1.4
 1 0 obj
@@ -85,21 +94,39 @@ endobj
 << /Font << /F1 6 0 R /F2 7 0 R >> >>
 endobj
 5 0 obj
-<< /Length 350 >>
+<< /Length 1500 >>
 stream
 BT
 /F1 24 Tf
-100 700 Td
+50 750 Td
 (PDF with ${boldingOption === 'syllable' ? 'First Syllable' : 'First 3 Letters'} Bolded) Tj
-/F1 14 Tf
-100 650 Td
-(Original text: ${sampleText}) Tj
-/F1 14 Tf
-100 620 Td
-(${processedContent}) Tj
+
 /F1 12 Tf
-100 550 Td
-(Note: This is a simulated result. In a full implementation, this would be your actual document with the first ${boldingOption === 'syllable' ? 'syllable' : '3 letters'} of each word bolded.) Tj
+0 -40 Td
+(Original text samples would be extracted from your document.) Tj
+
+0 -30 Td
+(Below is a demonstration of how the text would appear after processing:) Tj
+
+/F1 14 Tf
+-20 -40 Td
+${processedParagraphs[0]}
+
+0 -30 Td
+${processedParagraphs[1]}
+
+0 -30 Td
+${processedParagraphs[2]}
+
+0 -30 Td
+${processedParagraphs[3]}
+
+/F1 12 Tf
+0 -50 Td
+(In the full implementation, your entire document would be processed,) Tj
+0 -20 Td
+(including all text while preserving images, tables, and formatting.) Tj
+
 ET
 endstream
 endobj
@@ -117,54 +144,68 @@ xref
 0000000118 00000 n
 0000000217 00000 n
 0000000268 00000 n
-0000000670 00000 n
-0000000737 00000 n
+0000001820 00000 n
+0000001887 00000 n
 trailer
 << /Size 8 /Root 1 0 R >>
 startxref
-807
+1957
 %%EOF
   `;
 
   return new Blob([pdfContent], { type: 'application/pdf' });
 };
 
-// Function to bold parts of words based on the selected option
-const boldWords = (text: string, boldingOption: BoldingOption): string => {
+// Process a paragraph of text, formatting each word with proper PDF text commands
+const processTextWithBolding = (text: string, boldingOption: BoldingOption): string => {
   // Split the text into words
   const words = text.split(' ');
   
   // Process each word
-  const processedWords = words.map(word => {
-    if (word.length <= 1) return word;
+  const formattedParagraph = words.map(word => {
+    // Handle punctuation by separating it from the word
+    const punctuationMatch = word.match(/([.,;:!?)]*)$/);
+    const punctuation = punctuationMatch ? punctuationMatch[0] : '';
+    const cleanWord = word.substring(0, word.length - punctuation.length);
+    
+    if (cleanWord.length <= 1) {
+      return `/F1 14 Tf(${word}) Tj`;
+    }
     
     let boldPart = '';
     let restPart = '';
     
     if (boldingOption === 'syllable') {
-      // Simple syllable detection (in a real implementation, this would be more sophisticated)
-      // For demo, we'll just bold the first vowel group
-      const syllableMatch = word.match(/^[^aeiou]*[aeiou]+/i);
-      if (syllableMatch) {
-        boldPart = syllableMatch[0];
-        restPart = word.substring(boldPart.length);
+      // More sophisticated syllable detection
+      // First check for consonant clusters at beginning
+      const consonantClusterMatch = cleanWord.match(/^[bcdfghjklmnpqrstvwxyz]+/i);
+      const initialConsonants = consonantClusterMatch ? consonantClusterMatch[0] : '';
+      
+      // Then find the vowel group that follows
+      const remainingAfterConsonants = cleanWord.substring(initialConsonants.length);
+      const vowelGroupMatch = remainingAfterConsonants.match(/^[aeiou]+/i);
+      
+      if (vowelGroupMatch) {
+        // The syllable is the initial consonants + the vowel group
+        boldPart = initialConsonants + vowelGroupMatch[0];
+        restPart = cleanWord.substring(boldPart.length) + punctuation;
       } else {
-        // Fallback if no vowel found
-        boldPart = word.substring(0, 1);
-        restPart = word.substring(1);
+        // Fallback if no vowel found (rare cases)
+        boldPart = cleanWord.substring(0, Math.min(2, cleanWord.length));
+        restPart = cleanWord.substring(Math.min(2, cleanWord.length)) + punctuation;
       }
     } else {
       // Bold first 3 letters (or the whole word if shorter)
-      boldPart = word.substring(0, Math.min(3, word.length));
-      restPart = word.substring(Math.min(3, word.length));
+      boldPart = cleanWord.substring(0, Math.min(3, cleanWord.length));
+      restPart = cleanWord.substring(Math.min(3, cleanWord.length)) + punctuation;
     }
     
-    // For PDF content, we would return special formatting
-    // In a real implementation with a PDF library, we would use proper text styling
+    // Return PDF text commands for this word
     return `/F2 14 Tf(${boldPart}) Tj /F1 14 Tf(${restPart}) Tj`;
   });
   
-  return processedWords.join(' ');
+  // Join the formatted words with spaces in between
+  return formattedParagraph.join(' ');
 };
 
 // Function for actual PDF download
